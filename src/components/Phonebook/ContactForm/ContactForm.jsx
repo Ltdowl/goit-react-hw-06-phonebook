@@ -1,88 +1,81 @@
 import { useState } from 'react';
-import PropTypes from 'prop-types';
 import styles from './ContactForm.module.css';
 import { nanoid } from 'nanoid';
+import { useDispatch, useSelector } from 'react-redux';
+import { addContacts, getItems } from 'redux/ContactsSlice';
+import { Notyf } from 'notyf';
+import 'notyf/notyf.min.css';
+const notyf = new Notyf();
 
-export function ContactForm({ onSubmit }) {
+export function ContactForm() {
   const [name, setName] = useState('');
   const [number, setNumber] = useState('');
 
   const nameInputId = nanoid();
   const numberInputId = nanoid();
 
+  const contacts = useSelector(getItems);
+  const dispatch = useDispatch();
+
   const handleSubmit = e => {
     e.preventDefault();
-    const contact = {
+    const newContact = {
       id: nanoid(),
-      name: name,
-      number: number,
+      name,
+      number,
     };
-    onSubmit(contact);
+    contacts.find(contact => contact.name.toLowerCase() === name.toLowerCase())
+      ? notyf.error(`${name} is allready in phonebook`)
+      : dispatch(
+          addContacts(newContact),
+          notyf.success(`Contact ${name} added`)
+        );
+
     reset();
   };
-
-  const inputChange = e => {
-    const { name, value } = e.currentTarget;
-
-    switch (name) {
-      case 'name':
-        setName(value);
-        break;
-
-      case 'number':
-        setNumber(value);
-        break;
-
-      default:
-        return;
-    }
-  };
-
   const reset = () => {
     setName('');
     setNumber('');
   };
+  const changeName = e => setName(e.target.value);
+  const changeNumber = e => setNumber(e.target.value);
 
   return (
     <form onSubmit={handleSubmit} className={styles.form}>
-        <label htmlFor={nameInputId} className={styles.lable}>
-          Name
-          <input
-            type="text"
-            name="name"
-            value={name}
-            onChange={inputChange}
-            id={nameInputId}
-            placeholder="Enter name..."
-            pattern="^[a-zA-Zа-яА-Я]+(([' -][a-zA-Zа-яА-Я ])?[a-zA-Zа-яА-Я]*)*$"
-            title="Name may contain only letters, apostrophe, dash and spaces. For example Adrian, Jacob Mercer, Charles de Batz de Castelmore d'Artagnan"
-          />
-        </label>
-        <label htmlFor={numberInputId} className={styles.lable}>
-          Number
-          <input
-            type="tel"
-            name="number"
-            value={number}
-            onChange={inputChange}
-            id={numberInputId}
-            placeholder="Enter number..."
-            pattern="\+?\d{1,4}?[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}"
-            title="Phone number must be digits and can contain spaces, dashes, parentheses and can start with +"
-          />
-        </label>
+      <label htmlFor={nameInputId} className={styles.lable}>
+        Name
+        <input
+          type="text"
+          name="name"
+          value={name}
+          onChange={changeName}
+          id={nameInputId}
+          placeholder="Enter name..."
+          pattern="^[a-zA-Zа-яА-Я]+(([' -][a-zA-Zа-яА-Я ])?[a-zA-Zа-яА-Я]*)*$"
+          title="Name may contain only letters, apostrophe, dash and spaces. For example Adrian, Jacob Mercer, Charles de Batz de Castelmore d'Artagnan"
+        />
+      </label>
+      <label htmlFor={numberInputId} className={styles.lable}>
+        Number
+        <input
+          type="tel"
+          name="number"
+          value={number}
+          onChange={changeNumber}
+          id={numberInputId}
+          placeholder="Enter number..."
+          pattern="\+?\d{1,4}?[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}"
+          title="Phone number must be digits and can contain spaces, dashes, parentheses and can start with +"
+        />
+      </label>
 
-        <button
-          disabled={!name || !number}
-          className={styles.button}
-          type="submit"
-        >
-          Add contact
-        </button>
+      <button
+        disabled={!name || !number}
+        className={styles.button}
+        type="submit"
+      >
+        Add contact
+      </button>
     </form>
   );
 }
-
-ContactForm.propTypes = {
-  onSubmit: PropTypes.func.isRequired,
-};
